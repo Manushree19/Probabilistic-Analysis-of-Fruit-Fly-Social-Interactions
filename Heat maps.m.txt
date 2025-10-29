@@ -1,0 +1,79 @@
+% Load datasets
+courtshipData = readtable('courtship_complete.csv');
+maleData = readtable('male_complete.csv');
+femaleData = readtable('female_complete.csv');
+
+% Function to compute correlation
+compute_corr = @(X, Y) sum((X - mean(X)) .* (Y - mean(Y))) / ...
+    sqrt(sum((X - mean(X)).^2) * sum((Y - mean(Y)).^2));
+
+% Compute behavioral correlations
+corr_courtship = compute_corr(courtshipData.Fly1_behavior, courtshipData.Fly2_behavior);
+corr_male = compute_corr(maleData.Fly1_behavior, maleData.Fly2_behavior);
+corr_female = compute_corr(femaleData.Fly1_behavior, femaleData.Fly2_behavior);
+
+% Display results
+fprintf('Courtship Pairs - Behavioral Correlation: %.5f\n', corr_courtship);
+fprintf('Male-Male Pairs - Behavioral Correlation: %.5f\n', corr_male);
+fprintf('Female-Female Pairs - Behavioral Correlation: %.5f\n', corr_female);
+
+%% PLOT TRAJECTORIES
+figure;
+subplot(1,3,1);
+scatter(courtshipData.Fly1_x, courtshipData.Fly1_y, 'r.');
+hold on;
+scatter(courtshipData.Fly2_x, courtshipData.Fly2_y, 'b.');
+title('Courtship Pairs Movement');
+xlabel('X Position'); ylabel('Y Position');
+legend('Fly 1', 'Fly 2');
+axis equal; grid on;
+
+subplot(1,3,2);
+scatter(maleData.Fly1_x, maleData.Fly1_y, 'g.');
+hold on;
+scatter(maleData.Fly2_x, maleData.Fly2_y, 'm.');
+title('Male-Male Pairs Movement');
+xlabel('X Position'); ylabel('Y Position');
+legend('Fly 1', 'Fly 2');
+axis equal; grid on;
+
+subplot(1,3,3);
+scatter(femaleData.Fly1_x, femaleData.Fly1_y, 'c.');
+hold on;
+scatter(femaleData.Fly2_x, femaleData.Fly2_y, 'y.');
+title('Female-Female Pairs Movement');
+xlabel('X Position'); ylabel('Y Position');
+legend('Fly 1', 'Fly 2');
+axis equal; grid on;
+
+%% FUNCTION TO PLOT BEHAVIOR TRANSITION HEATMAP
+function plotTransitionHeatmap(fly1_behavior, fly2_behavior, titleText)
+    % Get unique states
+    uniqueStates = unique([fly1_behavior; fly2_behavior]); 
+    numStates = length(uniqueStates);
+    
+    % Create an empty transition matrix
+    transitionMatrix = zeros(numStates);
+    
+    % Populate transition matrix
+    for i = 1:length(fly1_behavior)-1
+        row = find(uniqueStates == fly1_behavior(i));
+        col = find(uniqueStates == fly2_behavior(i));
+        transitionMatrix(row, col) = transitionMatrix(row, col) + 1;
+    end
+    
+    % Normalize
+    transitionMatrix = transitionMatrix ./ max(1, sum(transitionMatrix, 2));
+
+    % Plot heatmap
+    figure;
+    heatmap(uniqueStates, uniqueStates, transitionMatrix);
+    title([titleText, ' - Behavior Heatmap']);
+    xlabel('Fly 1 Behavior');
+    ylabel('Fly 2 Behavior');
+end
+
+% Plot transition heatmaps
+plotTransitionHeatmap(courtshipData.Fly1_behavior, courtshipData.Fly2_behavior, 'Courtship Pairs');
+plotTransitionHeatmap(maleData.Fly1_behavior, maleData.Fly2_behavior, 'Male-Male Pairs');
+plotTransitionHeatmap(femaleData.Fly1_behavior, femaleData.Fly2_behavior, 'Female-Female Pairs');
